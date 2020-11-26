@@ -12,14 +12,19 @@ routes.get('/', (_, res) => {
 });
 
 
-routes.put('/schedule', async (req, res) => {
-  
+routes.put('/schedule/:userId', async (req, res) => {
+  const { userId } = req.params;
+  const { message } = req.body;
+
   Schedule.reschedule();
 
   const kafka = new Kafka();
 
   await kafka.connect();
-  await kafka.send(req.body.message);
+  await kafka.send({
+    id: userId,
+    message
+  });
 
   return res.json({
     ok: true
