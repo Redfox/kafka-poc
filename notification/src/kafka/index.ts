@@ -27,7 +27,7 @@ class Kafka {
             const response = await axios.get(`http://localhost:9200/customerinfo/_doc/${payload.id}`);
             const data = response.data._source;
   
-            console.log(`topic: ${topic} | Send notification to ${data.name}, token: ${data.push_token}`)
+            console.log(`topic: ${topic} | Send notification to ${data.name} message: ${payload.message}, token: ${data.push_token}`)
           } catch (err) {
             if(err.response.status === 404) {
               console.log(`topic: ${topic} | User not found`);
