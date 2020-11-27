@@ -1,8 +1,6 @@
-import { Kafka as Kafkajs, EachMessagePayload } from 'kafkajs'
-import { Client } from '@elastic/elasticsearch';
+import { Kafka as Kafkajs } from 'kafkajs'
 import axios from 'axios'
 
-const client = new Client({ node: 'http://localhost:9200' })
 class Kafka {
   private kafka: Kafkajs;
   
@@ -15,34 +13,29 @@ class Kafka {
     this.consumer('notificate');
   }
   
-  async consumer(topic: string
-    // eachMessage: (payload: EachMessagePayload) => Promise<void>
-    ) {
+  async consumer(topic: string) {
       const consumer = this.kafka.consumer({ groupId: 'notificate-group' });
       
       await consumer.connect();
       await consumer.subscribe({ topic: topic });
       
       await consumer.run({
-        eachMessage: async ({ message, topic, partition }): Promise<void> => {
+        eachMessage: async ({ message, topic }): Promise<void> => {
           const payload: { id: number, message: string } = JSON.parse(message.value);
-          console.log('payload', payload)
-          
-          // client.search({
-          //   index: 'userinfo',
-          //   body: {
-          //     _id: payload.id.toString()
-          //   }
-          // }).then(e => {
-          //   console.log(e)
-          // }).catch(err => {
-          //   console.log('error', err)
-          // })
 
-          const response = await axios.get(`http://localhost:9200/userinfo/_doc/${payload.id}`);
-          const data = response.data._source;
-
-          console.log(`topic: ${topic} | Send notification to ${data.name}, token: ${data.push_token}`)
+          try {
+            const response = await axios.get(`http://localhost:9200/customerinfo/_doc/${payload.id}`);
+            const data = response.data._source;
+  
+            console.log(`topic: ${topic} | Send notification to ${data.name}, token: ${data.push_token}`)
+          } catch (err) {
+            if(err.response.status === 404) {
+              console.log(`topic: ${topic} | User not found`);
+            } else {
+              console.log('ERRROR');
+              throw new Error(err);
+            }
+          }
         }
       })
   }
